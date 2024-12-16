@@ -1,6 +1,7 @@
 import tkinter as tk
 import socket
 import threading
+from cryptography.fernet import Fernet
 
 class ChatClient:
     def __init__(self, root):
@@ -12,6 +13,8 @@ class ChatClient:
         self.allClients = {}
         self.counter = 0
         self.clientNames = {}
+        self.encryption_key = Fernet.generate_key()  # Generate encryption key
+        self.cipher = Fernet(self.encryption_key)  # Create cipher instance
 
     def initUI(self):
         self.root.title("P2P Chat Application")
@@ -121,6 +124,7 @@ class ChatClient:
     def listenClients(self):
         while True:
             clientsoc, clientaddr = self.serverSoc.accept()
+            clientsoc.send(self.encryption_key)  # Send encryption key to client
             self.setStatus(f"Client connected from {clientaddr}")
             self.addClient(clientsoc, clientaddr)
             threading.Thread(target=self.handleClientMessages, args=(clientsoc, clientaddr)).start()  # Use threading
@@ -135,6 +139,8 @@ class ChatClient:
         try:
             clientsoc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             clientsoc.connect(clientaddr)
+            self.encryption_key = clientsoc.recv(self.buffsize)  # Receive encryption key from server
+            self.cipher = Fernet(self.encryption_key)  # Update cipher instance
             self.setStatus(f"Connected to client on {clientaddr}")
             self.addClient(clientsoc, clientaddr)
             self.clientNames[clientaddr] = self.nameVar.get().strip()
@@ -148,7 +154,9 @@ class ChatClient:
                 data = clientsoc.recv(self.buffsize)
                 if not data:
                     break
-                self.addChat("", data.decode('utf-8'))
+                print(f"Encrypted message received: {data}")
+                decrypted_msg = self.cipher.decrypt(data).decode('utf-8')  # Decrypt incoming message
+                self.addChat("", decrypted_msg)
             except:
                 break
         self.removeClient(clientsoc, clientaddr)
@@ -164,9 +172,14 @@ class ChatClient:
             return
         self.addChat(self.name, msg)
         full_message = f"{self.name}: {msg}"  # Format pesan dengan nama pengirim
+        encrypted_msg = self.cipher.encrypt(full_message.encode('utf-8'))  # Encrypt message
+
+        #Bukti Enkripsi
+        print(f"Encrypted message: {encrypted_msg}")
+
         for client in self.allClients.keys():
             try:
-                client.send(full_message.encode('utf-8'))  # Kirim pesan ke client
+                client.send(encrypted_msg)  # Send encrypted message
             except:
                 self.setStatus(f"Error sending message to {client}")
     
