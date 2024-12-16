@@ -11,6 +11,7 @@ class ChatClient:
         self.serverStatus = 0
         self.allClients = {}
         self.counter = 0
+        self.clientNames = {}
 
     def initUI(self):
         self.root.title("P2P Chat Application")
@@ -45,7 +46,7 @@ class ChatClient:
         ipGroup = tk.Frame(parentFrame, bg="#fbd4e8")  # Pink muda
         serverLabel = tk.Label(ipGroup, text="Set: ", bg="#fbd4e8", font=("Arial", 10))
         self.nameVar = tk.StringVar()
-        self.nameVar.set("SDH")
+        self.nameVar.set("UserName")
         nameField = tk.Entry(ipGroup, width=10, textvariable=self.nameVar)
         self.serverIPVar = tk.StringVar()
         self.serverIPVar.set("127.0.0.1")
@@ -110,9 +111,10 @@ class ChatClient:
             self.setStatus(f"Server listening on {serveraddr}")
             threading.Thread(target=self.listenClients).start()  # Use threading
             self.serverStatus = 1
-            self.name = self.nameVar.get().replace(' ', '')
-            if self.name == '':
-                self.name = f"{serveraddr[0]}:{serveraddr[1]}"
+            self.name = self.nameVar.get().strip()
+            if not self.name:
+                self.setStatus("Please enter a valid name before setting up the server")
+            return
         except:
             self.setStatus("Error setting up server")
 
@@ -135,6 +137,7 @@ class ChatClient:
             clientsoc.connect(clientaddr)
             self.setStatus(f"Connected to client on {clientaddr}")
             self.addClient(clientsoc, clientaddr)
+            self.clientNames[clientaddr] = self.nameVar.get().strip()
             threading.Thread(target=self.handleClientMessages, args=(clientsoc, clientaddr)).start()  # Use threading
         except:
             self.setStatus("Error connecting to client")
@@ -145,7 +148,7 @@ class ChatClient:
                 data = clientsoc.recv(self.buffsize)
                 if not data:
                     break
-                self.addChat(f"{clientaddr}", data.decode('utf-8'))
+                self.addChat("", data.decode('utf-8'))
             except:
                 break
         self.removeClient(clientsoc, clientaddr)
@@ -157,11 +160,17 @@ class ChatClient:
             self.setStatus("Set server address first")
             return
         msg = self.chatVar.get()
-        if msg == '':
+        if not msg.strip():
             return
-        self.addChat("me", msg)
+        self.addChat(self.name, msg)
+        full_message = f"{self.name}: {msg}"  # Format pesan dengan nama pengirim
         for client in self.allClients.keys():
-            client.send(msg.encode('utf-8'))
+            try:
+                client.send(full_message.encode('utf-8'))  # Kirim pesan ke client
+            except:
+                self.setStatus(f"Error sending message to {client}")
+    
+        self.chatVar.set("")
 
     def addChat(self, client, msg):
         self.receivedChats.config(state=tk.NORMAL)
@@ -171,6 +180,7 @@ class ChatClient:
     def addClient(self, clientsoc, clientaddr):
         self.allClients[clientsoc] = self.counter
         self.counter += 1
+        name = self.clientNames.get(clientaddr, clientaddr)
         self.friends.insert(self.counter, f"{clientaddr}")
 
     def removeClient(self, clientsoc, clientaddr):
