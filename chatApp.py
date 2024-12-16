@@ -25,25 +25,25 @@ class ChatClient:
 
         padX = 10
         padY = 10
-        parentFrame = tk.Frame(self.root)
+        parentFrame = tk.Frame(self.root, bg="#f8d7f7")  # Pink muda
         parentFrame.grid(padx=padX, pady=padY, stick=tk.E + tk.W + tk.N + tk.S)
 
         ipGroup = self.create_ip_group(parentFrame)
         readChatGroup = self.create_read_chat_group(parentFrame)
         writeChatGroup = self.create_write_chat_group(parentFrame)
 
-        self.statusLabel = tk.Label(parentFrame)
-        bottomLabel = tk.Label(parentFrame, text="Created by Siddhartha under Prof. A. Prakash [Computer Networks, Dept. of CSE, BIT Mesra]")
+        self.statusLabel = tk.Label(parentFrame, bg="#f8d7f7", fg="black", font=("Arial", 10))
+        bottomLabel = tk.Label(parentFrame, text="Created by Oppa Neeman The Gank", bg="#f8d7f7", font=("Arial", 10, "italic"))
 
-        ipGroup.grid(row=0, column=0)
-        readChatGroup.grid(row=1, column=0)
-        writeChatGroup.grid(row=2, column=0, pady=10)
-        self.statusLabel.grid(row=3, column=0)
-        bottomLabel.grid(row=4, column=0, pady=10)
+        ipGroup.grid(row=0, column=0, pady=(0, 10), sticky="ew")
+        readChatGroup.grid(row=1, column=0, pady=(0, 10), sticky="ew")
+        writeChatGroup.grid(row=2, column=0, pady=10, sticky="ew")
+        self.statusLabel.grid(row=3, column=0, pady=(10, 0), sticky="ew")
+        bottomLabel.grid(row=4, column=0, pady=10, sticky="ew")
 
     def create_ip_group(self, parentFrame):
-        ipGroup = tk.Frame(parentFrame, bg="lightblue")
-        serverLabel = tk.Label(ipGroup, text="Set: ", bg="lightblue")
+        ipGroup = tk.Frame(parentFrame, bg="#fbd4e8")  # Pink muda
+        serverLabel = tk.Label(ipGroup, text="Set: ", bg="#fbd4e8", font=("Arial", 10))
         self.nameVar = tk.StringVar()
         self.nameVar.set("SDH")
         nameField = tk.Entry(ipGroup, width=10, textvariable=self.nameVar)
@@ -53,16 +53,16 @@ class ChatClient:
         self.serverPortVar = tk.StringVar()
         self.serverPortVar.set("8090")
         serverPortField = tk.Entry(ipGroup, width=5, textvariable=self.serverPortVar)
-        serverSetButton = tk.Button(ipGroup, text="Set", width=10, command=self.handleSetServer)
+        serverSetButton = tk.Button(ipGroup, text="Set", width=10, command=self.handleSetServer, bg="#ff77b2", fg="white")
 
-        addClientLabel = tk.Label(ipGroup, text="Add friend: ")
+        addClientLabel = tk.Label(ipGroup, text="Add friend: ", bg="#fbd4e8", font=("Arial", 10))
         self.clientIPVar = tk.StringVar()
         self.clientIPVar.set("127.0.0.1")
         clientIPField = tk.Entry(ipGroup, width=15, textvariable=self.clientIPVar)
         self.clientPortVar = tk.StringVar()
         self.clientPortVar.set("8091")
         clientPortField = tk.Entry(ipGroup, width=5, textvariable=self.clientPortVar)
-        clientSetButton = tk.Button(ipGroup, text="Add", width=10, command=self.handleAddClient)
+        clientSetButton = tk.Button(ipGroup, text="Add", width=10, command=self.handleAddClient, bg="#ff77b2", fg="white")
 
         serverLabel.grid(row=0, column=0)
         nameField.grid(row=0, column=1)
@@ -78,20 +78,20 @@ class ChatClient:
 
     def create_read_chat_group(self, parentFrame):
         readChatGroup = tk.Frame(parentFrame)
-        self.receivedChats = tk.Text(readChatGroup, bg="white", width=60, height=30, state=tk.DISABLED)
-        self.friends = tk.Listbox(readChatGroup, bg="white", width=30, height=30)
-        self.receivedChats.grid(row=0, column=0, sticky=tk.W + tk.N + tk.S, padx=(0, 10))
-        self.friends.grid(row=0, column=1, sticky=tk.E + tk.N + tk.S)
+        self.friends = tk.Listbox(readChatGroup, bg="#fce4ec", width=30, height=20, font=("Arial", 12))
+        self.receivedChats = tk.Text(readChatGroup, bg="#ffffff", width=60, height=20, state=tk.DISABLED, font=("Arial", 12))
+        self.friends.grid(row=0, column=0, sticky=tk.W + tk.N + tk.S, padx=(0, 10))
+        self.receivedChats.grid(row=0, column=1, sticky=tk.E + tk.N + tk.S)
         return readChatGroup
 
     def create_write_chat_group(self, parentFrame):
         writeChatGroup = tk.Frame(parentFrame)
         self.chatVar = tk.StringVar()
-        self.chatField = tk.Entry(writeChatGroup, width=80, textvariable=self.chatVar)
-        sendChatButton = tk.Button(writeChatGroup, text="Send", width=10, command=self.handleSendChat)
+        self.chatField = tk.Entry(writeChatGroup, width=70, textvariable=self.chatVar, font=("Arial", 12))  # Lebar ditambah
+        sendChatButton = tk.Button(writeChatGroup, text="Send", width=12, command=self.handleSendChat, bg="#ff77b2", fg="white", font=("Arial", 12))
 
-        self.chatField.grid(row=0, column=0, sticky=tk.W)
-        sendChatButton.grid(row=0, column=1, padx=5)
+        self.chatField.grid(row=0, column=0, sticky=tk.W, padx=(5, 5))
+        sendChatButton.grid(row=0, column=1, padx=10, columnspan=2, sticky=tk.E)  # Memastikan tombol cukup lebar dan tidak terpotong
 
         return writeChatGroup
 
@@ -102,6 +102,7 @@ class ChatClient:
             self.serverStatus = 0
         
         serveraddr = (self.serverIPVar.get().replace(' ', ''), int(self.serverPortVar.get().replace(' ', '')))
+
         try:
             self.serverSoc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.serverSoc.bind(serveraddr)
@@ -155,7 +156,7 @@ class ChatClient:
         if self.serverStatus == 0:
             self.setStatus("Set server address first")
             return
-        msg = self.chatVar.get().replace(' ', '')
+        msg = self.chatVar.get()
         if msg == '':
             return
         self.addChat("me", msg)
@@ -173,14 +174,11 @@ class ChatClient:
         self.friends.insert(self.counter, f"{clientaddr}")
 
     def removeClient(self, clientsoc, clientaddr):
-        print(self.allClients)
         self.friends.delete(self.allClients[clientsoc])
         del self.allClients[clientsoc]
-        print(self.allClients)
 
     def setStatus(self, msg):
         self.statusLabel.config(text=msg)
-        print(msg)
 
 def main():
     root = tk.Tk()
